@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
 import { Play, Pause, Instagram, Youtube, Mail, Sparkles, Zap, TrendingUp, Eye, Heart, MessageCircle, Calendar, Clock, User, CheckCircle, ArrowRight, Star, Moon, Sun } from 'lucide-react';
+// @ts-ignore: allow importing image assets
 import profileImage from '../imports/image-3.png';
+import { Toaster, toast } from 'sonner';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 
@@ -24,7 +26,7 @@ export default function App() {
   const [projectDetails, setProjectDetails] = useState('');
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [theme, setTheme] = useState<'white' | 'black'>('white');
-  const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000').replace(/\/$/, '');
+  const API_BASE_URL = (((import.meta as any).env?.VITE_API_BASE_URL) || '/api').replace(/\/$/, '');
 
   const timeSlots = [
     '10:00 AM', '11:00 AM', '12:00 PM', '02:00 PM',
@@ -32,8 +34,9 @@ export default function App() {
   ];
 
   const handleBookMeeting = async () => {
+    console.log('handleBookMeeting invoked', { selectedDate, selectedTime, clientName, clientEmail });
     if (!selectedDate || !selectedTime || !clientName || !clientEmail) {
-      alert('yo! fill in all the fields first 👀');
+      toast.error('Please fill in all the fields first 👀');
       return;
     }
 
@@ -44,29 +47,110 @@ export default function App() {
       day: 'numeric'
     });
 
-    const bookingPayload = {
-      client_name: clientName,
-      client_email: clientEmail,
-      meeting_date: formattedDate,
-      meeting_time: selectedTime,
-      project_details: projectDetails || 'We can discuss the details on the call'
-    };
+    const formattedTimestamp = new Date(selectedDate);
+    const timeParts = selectedTime.match(/^(\d{2}):(\d{2})\s(AM|PM)$/);
+    if (timeParts) {
+      let hours = Number(timeParts[1]);
+      const minutes = Number(timeParts[2]);
+      const period = timeParts[3];
+      if (period === 'PM' && hours !== 12) hours += 12;
+      if (period === 'AM' && hours === 12) hours = 0;
+      formattedTimestamp.setHours(hours, minutes, 0, 0);
+    }
+
+    const bookingText = [
+      `Meeting date: ${formattedDate}`,
+      `Meeting time: ${selectedTime}`,
+      projectDetails || 'We can discuss the details on the call'
+    ].join('\n\n');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/bookings`, {
+      const createResp = await fetch(`${API_BASE_URL}/clients`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(bookingPayload)
+        body: JSON.stringify({
+          name: clientName,
+          email: clientEmail,
+          timestamp: formattedTimestamp.toISOString(),
+          text: bookingText
+        })
       });
 
-      if (!response.ok) {
-        const data = await response.json().catch(() => null);
-        const message = data?.detail || 'Something went wrong while booking the call.';
-        throw new Error(message);
+      if (!createResp.ok) {
+        const data = await createResp.json().catch(() => null);
+        const message = data?.detail || 'Something went wrong while creating the client.';
+        const duplicateDetected = createResp.status === 409 || /already exists|duplicate/i.test(message);
+
+        if (!duplicateDetected) {
+          throw new Error(message);
+        }
+
+        toast('This client already exists. Using the existing record to send the email.');
+
+        const clientsResp = await fetch(`${API_BASE_URL}/clients`);
+        if (!clientsResp.ok) {
+          throw new Error(message);
+        }
+
+        const clients = await clientsResp.json().catch(() => []);
+        const existing = Array.isArray(clients)
+          ? clients.find((client: any) => (client.email || '').toLowerCase() === clientEmail.toLowerCase())
+          : null;
+
+        if (!existing) {
+          throw new Error('Client already exists, but the existing record could not be found.');
+        }
+
+        const existingClientId = existing.id || existing.client_id || existing._id || null;
+        if (!existingClientId) {
+          throw new Error('Client already exists, but it does not have a usable id.');
+        }
+
+        const emailResp = await fetch(`${API_BASE_URL}/clients/${existingClientId}/send-email`, {
+          method: 'POST'
+        });
+
+        if (!emailResp.ok) {
+          const emailError = await emailResp.json().catch(() => null);
+          const emailMessage = emailError?.detail || 'Email sending failed on the backend.';
+          throw new Error(emailMessage);
+        }
+
+        toast.success('Existing client found and email sent');
+        setBookingSuccess(true);
+        setTimeout(() => {
+          setBookingSuccess(false);
+          setSelectedDate(undefined);
+          setSelectedTime('');
+          setClientName('');
+          setClientEmail('');
+          setProjectDetails('');
+        }, 3000);
+        return;
       }
 
+      const created = await createResp.json().catch(() => null) || {};
+      const clientId = created.id || created.client_id || created._id || null;
+
+      let emailSent = false;
+      if (clientId) {
+        const emailResp = await fetch(`${API_BASE_URL}/clients/${clientId}/send-email`, {
+          method: 'POST'
+        });
+
+        if (!emailResp.ok) {
+          const emailError = await emailResp.json().catch(() => null);
+          const emailMessage = emailError?.detail || 'Email sending failed on the backend.';
+          throw new Error(emailMessage);
+        }
+
+        emailSent = true;
+      }
+
+      // Success
+      toast.success(emailSent ? 'Booking saved and email sent' : 'Booking saved');
       setBookingSuccess(true);
       setTimeout(() => {
         setBookingSuccess(false);
@@ -76,9 +160,12 @@ export default function App() {
         setClientEmail('');
         setProjectDetails('');
       }, 3000);
-    } catch (error) {
-      console.error('Failed to create booking:', error);
-      alert('Oops! Something went wrong. Please try again or email me directly at nikhmdia@gmail.com');
+    } catch (error: any) {
+      console.error('Failed to create client:', error);
+      const message = error?.name === 'TypeError' && error?.message === 'Failed to fetch'
+        ? 'Network request failed. If this is a browser CORS error, the backend must allow your frontend origin.'
+        : (error?.message || 'Oops! Something went wrong. Please try again or email me directly at nikhmdia@gmail.com');
+      toast.error(message);
     }
   };
 
@@ -98,6 +185,7 @@ export default function App() {
     <div className={`min-h-screen overflow-x-hidden overflow-y-auto relative transition-colors duration-500 ${
       theme === 'white' ? 'bg-amber-50 text-zinc-900' : 'bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white'
     }`}>
+      <Toaster position="top-right" />
       {/* Theme Toggle Button */}
       <motion.button
         onClick={() => setTheme(theme === 'white' ? 'black' : 'white')}
@@ -932,9 +1020,9 @@ export default function App() {
 
                 {/* Submit button - Big stamp style */}
                 <button
+                  type="button"
                   onClick={handleBookMeeting}
-                  disabled={!selectedDate || !selectedTime || !clientName || !clientEmail}
-                  className="w-full px-6 sm:px-8 py-4 sm:py-6 bg-gradient-to-r from-orange-500 via-pink-500 to-purple-500 text-white font-black text-lg sm:text-xl md:text-2xl tracking-wide disabled:opacity-30 disabled:cursor-not-allowed transition-all transform hover:scale-105 hover:rotate-1 shadow-2xl"
+                  className="w-full px-6 sm:px-8 py-4 sm:py-6 bg-gradient-to-r from-orange-500 via-pink-500 to-purple-500 text-white font-black text-lg sm:text-xl md:text-2xl tracking-wide transition-all transform hover:scale-105 hover:rotate-1 shadow-2xl"
                   style={{
                     clipPath: 'polygon(5% 0%, 95% 0%, 100% 5%, 100% 95%, 95% 100%, 5% 100%, 0% 95%, 0% 5%)',
                     fontFamily: 'Comic Sans MS, cursive'
