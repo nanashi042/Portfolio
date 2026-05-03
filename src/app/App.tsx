@@ -114,6 +114,11 @@ export default function App() {
 
         if (!emailResp.ok) {
           const emailError = await emailResp.json().catch(() => null);
+          const emailDetail = (emailError?.detail || emailError?.message || '').toString();
+          if (/smtp|SMTP|SMTP_HOST|SMTP_USER|SMTP_PASS|credentials|not set|missing/i.test(emailDetail)) {
+            toast.error('Email failed: backend SMTP not configured. See SMTP_SETUP.md');
+            throw new Error(emailDetail || 'Email sending failed: SMTP not configured');
+          }
           const emailMessage = emailError?.detail || 'Email sending failed on the backend.';
           throw new Error(emailMessage);
         }
@@ -142,6 +147,11 @@ export default function App() {
 
         if (!emailResp.ok) {
           const emailError = await emailResp.json().catch(() => null);
+          const emailDetail = (emailError?.detail || emailError?.message || '').toString();
+          if (/smtp|SMTP|SMTP_HOST|SMTP_USER|SMTP_PASS|credentials|not set|missing/i.test(emailDetail)) {
+            toast.error('Email failed: backend SMTP not configured. See SMTP_SETUP.md');
+            throw new Error(emailDetail || 'Email sending failed: SMTP not configured');
+          }
           const emailMessage = emailError?.detail || 'Email sending failed on the backend.';
           throw new Error(emailMessage);
         }
