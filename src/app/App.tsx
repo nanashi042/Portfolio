@@ -33,6 +33,18 @@ export default function App() {
     '03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM'
   ];
 
+  const portfolioVideos: Video[] = [
+    { id: '1', title: 'Viral Reel Edit', creator: 'Jhansi Way', videoUrl: 'https://www.instagram.com/p/DGbO4NpSWle/embed', views: '18.2M', platform: 'instagram' },
+    { id: '2', title: 'High Energy Content', creator: 'Aditya TTP', videoUrl: 'https://www.instagram.com/p/DQo47I2iEOY/embed', views: '15.7M', platform: 'instagram' },
+    { id: '3', title: 'Educational Banger', creator: 'Vidhan TTP', videoUrl: 'https://www.instagram.com/p/DQeeeS0CH9-/embed', views: '12.4M', platform: 'instagram' },
+    { id: '4', title: 'Story Arc Edit', creator: 'Vidhan TTP', videoUrl: 'https://www.instagram.com/p/DQHTeoLiN5l/embed', views: '9.8M', platform: 'instagram' },
+    { id: '5', title: 'Trending Format', creator: 'Sleepy', videoUrl: 'https://www.instagram.com/p/DPE4wb_gAeE/embed', views: '21.3M', platform: 'instagram' },
+    { id: '6', title: 'Quick Cut Magic', creator: 'Sleepy', videoUrl: 'https://www.instagram.com/p/DPRtSsTAF2P/embed', views: '14.1M', platform: 'instagram' },
+    { id: '7', title: 'Premium Polish', creator: 'Sleepy', videoUrl: 'https://www.instagram.com/p/DQo7l9ggIrt/embed', views: '11.5M', platform: 'instagram' },
+    { id: '8', title: 'Long Form Series', creator: 'The Top Percentile', videoUrl: 'https://www.youtube.com/embed/BTBjd2IsPCs', views: '8.9M', platform: 'youtube' },
+    { id: '9', title: 'YouTube Deep Dive', creator: 'Ask Life With Anmol', videoUrl: 'https://www.youtube.com/embed/Nrap3wNH7_Y', views: '6.3M', platform: 'youtube' }
+  ];
+
   const handleBookMeeting = async () => {
     console.log('handleBookMeeting invoked', { selectedDate, selectedTime, clientName, clientEmail });
     if (!selectedDate || !selectedTime || !clientName || !clientEmail) {
@@ -80,87 +92,19 @@ export default function App() {
 
       if (!createResp.ok) {
         const data = await createResp.json().catch(() => null);
-        const message = data?.detail || 'Something went wrong while creating the client.';
+        const message = data?.detail || 'Something went wrong while saving the booking.';
         const duplicateDetected = createResp.status === 409 || /already exists|duplicate/i.test(message);
 
         if (!duplicateDetected) {
           throw new Error(message);
         }
 
-        toast('This client already exists. Using the existing record to send the email.');
-
-        const clientsResp = await fetch(`${API_BASE_URL}/clients`);
-        if (!clientsResp.ok) {
-          throw new Error(message);
-        }
-
-        const clients = await clientsResp.json().catch(() => []);
-        const existing = Array.isArray(clients)
-          ? clients.find((client: any) => (client.email || '').toLowerCase() === clientEmail.toLowerCase())
-          : null;
-
-        if (!existing) {
-          throw new Error('Client already exists, but the existing record could not be found.');
-        }
-
-        const existingClientId = existing.id || existing.client_id || existing._id || null;
-        if (!existingClientId) {
-          throw new Error('Client already exists, but it does not have a usable id.');
-        }
-
-        const emailResp = await fetch(`${API_BASE_URL}/clients/${existingClientId}/send-email`, {
-          method: 'POST'
-        });
-
-        if (!emailResp.ok) {
-          const emailError = await emailResp.json().catch(() => null);
-          const emailDetail = (emailError?.detail || emailError?.message || '').toString();
-          if (/smtp|SMTP|SMTP_HOST|SMTP_USER|SMTP_PASS|credentials|not set|missing/i.test(emailDetail)) {
-            toast.error('Email failed: backend SMTP not configured. See SMTP_SETUP.md');
-            throw new Error(emailDetail || 'Email sending failed: SMTP not configured');
-          }
-          const emailMessage = emailError?.detail || 'Email sending failed on the backend.';
-          throw new Error(emailMessage);
-        }
-
-        toast.success('Existing client found and email sent');
-        setBookingSuccess(true);
-        setTimeout(() => {
-          setBookingSuccess(false);
-          setSelectedDate(undefined);
-          setSelectedTime('');
-          setClientName('');
-          setClientEmail('');
-          setProjectDetails('');
-        }, 3000);
-        return;
+        toast('This client already exists. Booking was already saved in the backend.');
+      } else {
+        await createResp.json().catch(() => null);
       }
 
-      const created = await createResp.json().catch(() => null) || {};
-      const clientId = created.id || created.client_id || created._id || null;
-
-      let emailSent = false;
-      if (clientId) {
-        const emailResp = await fetch(`${API_BASE_URL}/clients/${clientId}/send-email`, {
-          method: 'POST'
-        });
-
-        if (!emailResp.ok) {
-          const emailError = await emailResp.json().catch(() => null);
-          const emailDetail = (emailError?.detail || emailError?.message || '').toString();
-          if (/smtp|SMTP|SMTP_HOST|SMTP_USER|SMTP_PASS|credentials|not set|missing/i.test(emailDetail)) {
-            toast.error('Email failed: backend SMTP not configured. See SMTP_SETUP.md');
-            throw new Error(emailDetail || 'Email sending failed: SMTP not configured');
-          }
-          const emailMessage = emailError?.detail || 'Email sending failed on the backend.';
-          throw new Error(emailMessage);
-        }
-
-        emailSent = true;
-      }
-
-      // Success
-      toast.success(emailSent ? 'Booking saved and email sent' : 'Booking saved');
+      toast.success('Booking saved in the backend');
       setBookingSuccess(true);
       setTimeout(() => {
         setBookingSuccess(false);
@@ -171,7 +115,7 @@ export default function App() {
         setProjectDetails('');
       }, 3000);
     } catch (error: any) {
-      console.error('Failed to create client:', error);
+      console.error('Failed to save booking:', error);
       const message = error?.name === 'TypeError' && error?.message === 'Failed to fetch'
         ? 'Network request failed. If this is a browser CORS error, the backend must allow your frontend origin.'
         : (error?.message || 'Oops! Something went wrong. Please try again or email me directly at nikhmdia@gmail.com');
@@ -179,44 +123,31 @@ export default function App() {
     }
   };
 
-  const portfolioVideos: Video[] = [
-    { id: '1', title: 'Viral Reel Edit', creator: 'Jhansi Way', videoUrl: 'https://www.instagram.com/p/DGbO4NpSWle/embed', views: '18.2M', platform: 'instagram' },
-    { id: '2', title: 'High Energy Content', creator: 'Aditya TTP', videoUrl: 'https://www.instagram.com/p/DQo47I2iEOY/embed', views: '15.7M', platform: 'instagram' },
-    { id: '3', title: 'Educational Banger', creator: 'Vidhan TTP', videoUrl: 'https://www.instagram.com/p/DQeeeS0CH9-/embed', views: '12.4M', platform: 'instagram' },
-    { id: '4', title: 'Story Arc Edit', creator: 'Vidhan TTP', videoUrl: 'https://www.instagram.com/p/DQHTeoLiN5l/embed', views: '9.8M', platform: 'instagram' },
-    { id: '5', title: 'Trending Format', creator: 'Sleepy', videoUrl: 'https://www.instagram.com/p/DPE4wb_gAeE/embed', views: '21.3M', platform: 'instagram' },
-    { id: '6', title: 'Quick Cut Magic', creator: 'Sleepy', videoUrl: 'https://www.instagram.com/p/DPRtSsTAF2P/embed', views: '14.1M', platform: 'instagram' },
-    { id: '7', title: 'Premium Polish', creator: 'Sleepy', videoUrl: 'https://www.instagram.com/p/DQo7l9ggIrt/embed', views: '11.5M', platform: 'instagram' },
-    { id: '8', title: 'Long Form Series', creator: 'The Top Percentile', videoUrl: 'https://www.youtube.com/embed/BTBjd2IsPCs', views: '8.9M', platform: 'youtube' },
-    { id: '9', title: 'YouTube Deep Dive', creator: 'Ask Life With Anmol', videoUrl: 'https://www.youtube.com/embed/Nrap3wNH7_Y', views: '6.3M', platform: 'youtube' }
-  ];
-
   return (
-    <div className={`min-h-screen overflow-x-hidden overflow-y-auto relative transition-colors duration-500 ${
-      theme === 'white' ? 'bg-amber-50 text-zinc-900' : 'bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white'
-    }`}>
-      <Toaster position="top-right" />
-      {/* Theme Toggle Button */}
-      <motion.button
-        onClick={() => setTheme(theme === 'white' ? 'black' : 'white')}
-        whileHover={{ scale: 1.1, rotate: 15 }}
-        whileTap={{ scale: 0.9 }}
-        className={`fixed top-4 right-4 sm:top-6 sm:right-6 z-50 w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center shadow-2xl transition-all ${
-          theme === 'white'
-            ? 'bg-gradient-to-br from-zinc-900 to-zinc-700 text-white'
-            : 'bg-gradient-to-br from-amber-200 to-yellow-300 text-zinc-900'
-        }`}
-        style={{
-          clipPath: 'polygon(10% 0%, 90% 0%, 100% 10%, 100% 90%, 90% 100%, 10% 100%, 0% 90%, 0% 10%)',
-          transform: 'rotate(-3deg)'
-        }}
-      >
-        {theme === 'white' ? (
-          <Moon className="w-6 h-6 sm:w-8 sm:h-8" />
-        ) : (
-          <Sun className="w-6 h-6 sm:w-8 sm:h-8" />
-        )}
-      </motion.button>
+        <div className={`min-h-screen overflow-x-hidden overflow-y-auto relative transition-colors duration-500 ${
+          theme === 'white' ? 'bg-amber-50 text-zinc-900' : 'bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white'
+        }`}>
+        {/* Theme Toggle Button */}
+        <motion.button
+          onClick={() => setTheme(theme === 'white' ? 'black' : 'white')}
+          whileHover={{ scale: 1.1, rotate: 15 }}
+          whileTap={{ scale: 0.9 }}
+          className={`fixed top-4 right-4 sm:top-6 sm:right-6 z-50 w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center shadow-2xl transition-all ${
+            theme === 'white'
+              ? 'bg-gradient-to-br from-zinc-900 to-zinc-700 text-white'
+              : 'bg-gradient-to-br from-amber-200 to-yellow-300 text-zinc-900'
+          }`}
+          style={{
+            clipPath: 'polygon(10% 0%, 90% 0%, 100% 10%, 100% 90%, 90% 100%, 10% 100%, 0% 90%, 0% 10%)',
+            transform: 'rotate(-3deg)'
+          }}
+        >
+          {theme === 'white' ? (
+            <Moon className="w-6 h-6 sm:w-8 sm:h-8" />
+          ) : (
+            <Sun className="w-6 h-6 sm:w-8 sm:h-8" />
+          )}
+        </motion.button>
 
       {/* Paper texture overlay */}
       <div className="fixed inset-0 opacity-40 pointer-events-none bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIiB4PSIwIiB5PSIwIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PGZlQ29sb3JNYXRyaXggdHlwZT0ic2F0dXJhdGUiIHZhbHVlcz0iMCIvPjwvZmlsdGVyPjxwYXRoIGQ9Ik0wIDBoMzAwdjMwMEgweiIgZmlsdGVyPSJ1cmwoI2EpIiBvcGFjaXR5PSIuMSIvPjwvc3ZnPg==')]"></div>
