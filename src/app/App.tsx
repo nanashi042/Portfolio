@@ -34,11 +34,11 @@ export default function App() {
   ];
 
   const portfolioVideos: Video[] = [
+    { id: '5', title: 'Trending Format', creator: 'Sleepy', videoUrl: 'https://www.instagram.com/p/DPE4wb_gAeE/embed', views: '21.3M', platform: 'instagram' },
     { id: '1', title: 'Viral Reel Edit', creator: 'Jhansi Way', videoUrl: 'https://www.instagram.com/p/DGbO4NpSWle/embed', views: '18.2M', platform: 'instagram' },
     { id: '2', title: 'High Energy Content', creator: 'Aditya TTP', videoUrl: 'https://www.instagram.com/p/DQo47I2iEOY/embed', views: '15.7M', platform: 'instagram' },
     { id: '3', title: 'Educational Banger', creator: 'Vidhan TTP', videoUrl: 'https://www.instagram.com/p/DQeeeS0CH9-/embed', views: '12.4M', platform: 'instagram' },
     { id: '4', title: 'Story Arc Edit', creator: 'Vidhan TTP', videoUrl: 'https://www.instagram.com/p/DQHTeoLiN5l/embed', views: '9.8M', platform: 'instagram' },
-    { id: '5', title: 'Trending Format', creator: 'Sleepy', videoUrl: 'https://www.instagram.com/p/DPE4wb_gAeE/embed', views: '21.3M', platform: 'instagram' },
     { id: '6', title: 'Quick Cut Magic', creator: 'Sleepy', videoUrl: 'https://www.instagram.com/p/DPRtSsTAF2P/embed', views: '14.1M', platform: 'instagram' },
     { id: '7', title: 'Premium Polish', creator: 'Sleepy', videoUrl: 'https://www.instagram.com/p/DQo7l9ggIrt/embed', views: '11.5M', platform: 'instagram' },
     { id: '8', title: 'Long Form Series', creator: 'The Top Percentile', videoUrl: 'https://www.youtube.com/embed/BTBjd2IsPCs', views: '8.9M', platform: 'youtube' },
