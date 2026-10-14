@@ -1,6 +1,6 @@
 # FastAPI Backend Setup
 
-This project now supports server-side booking + acknowledgment emails via FastAPI and SQLite.
+This project now supports server-side booking + SMTP notification emails via FastAPI and SQLite.
 
 ## 1) Install backend dependencies
 
@@ -17,7 +17,7 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Update `backend/.env` with your SMTP credentials.
+Update `backend/.env` with your SMTP credentials. The backend sends every new booking notification to `nikhmdia@gmail.com`.
 
 Important for Gmail:
 - Use an App Password (not your normal account password)
@@ -64,7 +64,7 @@ Payload:
 Behavior:
 - Saves booking in SQLite (`backend/bookings.db`)
 - Creates email log row
-- Sends acknowledgment email via SMTP
+- Sends a new-booking notification email via SMTP to `nikhmdia@gmail.com`
 - Updates email log with `sent` or `failed`
 
 ## SQLite tables

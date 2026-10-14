@@ -1,0 +1,6 @@
+Clip Cutter — AI Video Clipping Tool | Python, Flask, FFmpeg, Automation
+    • Developed an automated video clipping tool for extracting and processing specific video segments efficiently.
+    • Integrated FFmpeg-based video processing for fast trimming, cutting, and media handling workflows.
+    • Built backend services using Flask to manage upload, processing, and clip generation pipelines.
+    • Designed a streamlined workflow for content creators to generate short-form clips from longer videos.
+    • Optimized processing performance and file handling for smoother rendering and reduced execution time.
