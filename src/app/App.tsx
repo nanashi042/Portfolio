@@ -29,6 +29,16 @@ type Video = {
 
 const videos: Video[] = [
   {
+    id: '0',
+    title: 'Trending Format',
+    creator: 'Nikhil | Editor',
+    videoUrl: 'https://www.instagram.com/p/DPE4wb_gAeE/embed',
+    views: 'Featured',
+    platform: 'instagram',
+    category: 'short',
+    tone: 'from-amber-300/80 via-orange-500/70 to-fuchsia-600/80',
+  },
+  {
     id: '1',
     title: 'Viral Reel Edit',
     creator: 'Jhansi Way',
@@ -174,7 +184,13 @@ const longBlogs = [
   ['02', 'The retention edit', 'How I turn a rough talking-head recording into a journey people finish.', '15 min read'],
 ];
 
-function VideoCard({ video, onOpen }: { video: Video; onOpen: (video: Video) => void }) {
+function youtubeVideoId(videoUrl: string) {
+  return videoUrl.match(/(?:youtube\.com\/embed\/|youtu\.be\/)([^?&#/]+)/i)?.[1];
+}
+
+function VideoCard({ video, number, onOpen }: { video: Video; number: number; onOpen: (video: Video) => void }) {
+  const youtubeId = video.platform === 'youtube' ? youtubeVideoId(video.videoUrl) : undefined;
+
   return (
     <motion.button
       type="button"
@@ -184,10 +200,13 @@ function VideoCard({ video, onOpen }: { video: Video; onOpen: (video: Video) => 
       className="group glass-card video-card text-left"
     >
       <div className={`video-art bg-gradient-to-br ${video.tone}`}>
+        {youtubeId && <img className="video-thumbnail" src={`https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`} alt="" loading="lazy" />}
         <div className="video-depth video-depth-one" />
         <div className="video-depth video-depth-two" />
         <div className="video-grid" />
-        <span className="video-number">{video.id}</span>
+        <span className="video-number">{String(number).padStart(2, '0')}</span>
+        <span className="video-label">{video.category === 'long' ? 'FILM' : video.category === 'personal' ? 'NOTE' : 'REEL'}</span>
+        <span className="video-art-title">{video.title}</span>
         <span className="video-play"><Play size={16} fill="currentColor" /></span>
         <span className="video-platform">
           {video.platform === 'instagram' ? <Instagram size={14} /> : <Youtube size={14} />}
@@ -225,9 +244,16 @@ function autoplayVideoUrl(video: Video) {
   }
   const separator = video.videoUrl.includes('?') ? '&' : '?';
   if (video.platform === 'youtube') {
-    return `${video.videoUrl}${separator}autoplay=1&mute=1&playsinline=1&controls=1&rel=0`;
+    return `${video.videoUrl}${separator}autoplay=1&mute=1&playsinline=1&controls=1&rel=0&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`;
   }
   return video.videoUrl;
+}
+
+function externalVideoUrl(video: Video) {
+  const youtubeId = youtubeVideoId(video.videoUrl);
+  if (youtubeId) return `https://www.youtube.com/watch?v=${youtubeId}`;
+  const instagramId = video.videoUrl.match(/instagram\.com\/(?:p|reel|tv)\/([^/?#]+)/i)?.[1];
+  return instagramId ? `https://www.instagram.com/p/${instagramId}/` : video.videoUrl;
 }
 
 function AddVideoPage({ onBack }: { onBack: () => void }) {
@@ -237,6 +263,7 @@ function AddVideoPage({ onBack }: { onBack: () => void }) {
   const [platform, setPlatform] = useState<Video['platform']>('youtube');
   const [category, setCategory] = useState<Video['category']>('short');
   const [views, setViews] = useState('');
+  const [added, setAdded] = useState(false);
 
   const addVideo = () => {
     if (!title.trim() || !sourceUrl.trim()) {
@@ -258,6 +285,7 @@ function AddVideoPage({ onBack }: { onBack: () => void }) {
     const saved = JSON.parse(localStorage.getItem('nimbuuz-videos') || '[]') as Video[];
     localStorage.setItem('nimbuuz-videos', JSON.stringify([video, ...saved]));
     toast.success('Video added to the homepage.');
+    setAdded(true);
     setTitle('');
     setCreator('');
     setSourceUrl('');
@@ -289,7 +317,7 @@ function AddVideoPage({ onBack }: { onBack: () => void }) {
             <label>Format<select value={category} onChange={(event) => setCategory(event.target.value as Video['category'])}><option value="short">Short form / 9:16</option><option value="long">Long form / 16:9</option></select></label>
           </div>
           <label>Views <span className="muted-label">(optional)<input value={views} onChange={(event) => setViews(event.target.value)} placeholder="12.4M" /></span></label>
-          <button type="button" className="button-primary submit-button" onClick={addVideo}>Add to selected work <ArrowUpRight size={18} /></button>
+          <div className="add-actions"><button type="button" className="button-primary submit-button" onClick={addVideo}>Add to selected work <ArrowUpRight size={18} /></button>{added && <a className="button-quiet view-home-link" href="/#work">View on homepage <ArrowUpRight size={16} /></a>}</div>
           <p className="form-note">Tip: YouTube watch links, youtu.be links, and Drive file links are converted automatically.</p>
         </div>
       </section>
@@ -328,6 +356,8 @@ export default function App() {
   }
 
   const allVideos = [...customVideos, ...videos];
+  const shortVideos = allVideos.filter((video) => video.category === 'short');
+  const longVideos = allVideos.filter((video) => video.category === 'long');
 
   return (
     <main className="site-shell">
@@ -385,18 +415,18 @@ export default function App() {
         <div className="section-heading"><div><span className="section-kicker">01 / Selected work</span><h2>Made to be <span>felt.</span></h2></div><p>Every cut has a job: hold attention, sharpen an idea, or make someone press replay.</p></div>
         <div className="work-block">
           <div className="sub-heading"><div><span className="section-kicker">Fast, focused, replayable</span><h3>Short form <span>/</span> 9:16</h3></div><a href="#contact">See all shorts <ArrowUpRight size={16} /></a></div>
-          <div className="video-grid-cards">{allVideos.filter((video) => video.category === 'short').map((video) => <VideoCard key={video.id} video={video} onOpen={setActiveVideo} />)}</div>
+          <div className="video-grid-cards">{shortVideos.map((video, index) => <VideoCard key={video.id} video={video} number={index + 1} onOpen={setActiveVideo} />)}</div>
         </div>
         <div className="work-block long-work">
           <div className="sub-heading"><div><span className="section-kicker">Room for the story</span><h3>Long form <span>/</span> 16:9</h3></div><a href="#contact">See all films <ArrowUpRight size={16} /></a></div>
-          <div className="long-grid">{allVideos.filter((video) => video.category === 'long').map((video) => <VideoCard key={video.id} video={video} onOpen={setActiveVideo} />)}</div>
+          <div className="long-grid">{longVideos.map((video, index) => <VideoCard key={video.id} video={video} number={index + 1} onOpen={setActiveVideo} />)}</div>
         </div>
       </section>
 
       <section className="section personal-section">
         <div className="container">
           <div className="section-heading"><div><span className="section-kicker">01.5 / Personal corner</span><h2>Off the clock,<br /><span>still creating.</span></h2></div><p>A little space for experiments, visual notes, and edits made just because the idea would not leave me alone.</p></div>
-          <div className="personal-grid">{personalVideos.map((video) => <VideoCard key={video.id} video={video} onOpen={setActiveVideo} />)}</div>
+          <div className="personal-grid">{personalVideos.map((video, index) => <VideoCard key={video.id} video={video} number={index + 1} onOpen={setActiveVideo} />)}</div>
         </div>
       </section>
 
@@ -429,7 +459,7 @@ export default function App() {
 
       <footer id="contact" className="site-footer container"><div className="footer-main"><a href="#" className="brand"><span className="brand-mark">N</span><span>Nikhil <span className="brand-dot">|</span> Editor</span></a><h2>Let's make<br /><span>the next frame.</span></h2><a className="footer-email" href="mailto:nikhmdia@gmail.com">nikhmdia@gmail.com <ArrowUpRight size={20} /></a></div><div className="footer-bottom"><span>© 2025 Nikhil | Editor</span><span>Designed & edited with intent</span><div className="socials"><a href="https://instagram.com/nimbuuz.mov" aria-label="Instagram"><Instagram size={17} /></a><a href="https://www.youtube.com" aria-label="YouTube"><Youtube size={17} /></a><a href="https://linkedin.com" aria-label="LinkedIn"><Linkedin size={17} /></a></div></div></footer>
 
-      {activeVideo && <div className="video-modal" role="dialog" aria-modal="true" onClick={() => setActiveVideo(null)}><div className="theater-stage"><div className={`video-modal-inner ${activeVideo.platform === 'instagram' ? 'portrait' : ''}`} onClick={(event) => event.stopPropagation()}><div className="theater-reflection" /><button className="modal-close" onClick={() => setActiveVideo(null)} aria-label="Close video"><X /></button><iframe src={autoplayVideoUrl(activeVideo)} title={activeVideo.title} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen /><div className="theater-caption"><span>{activeVideo.category === 'personal' ? 'PERSONAL CORNER' : 'SELECTED WORK'}</span><strong>{activeVideo.title}</strong><small>{activeVideo.creator}</small></div></div></div></div>}
+      {activeVideo && <div className="video-modal" role="dialog" aria-modal="true" onClick={(event) => { if (event.target === event.currentTarget) setActiveVideo(null); }}><div className="theater-stage"><button className="modal-close" onClick={() => setActiveVideo(null)} aria-label="Close video"><X /></button><a className="video-external-link" href={externalVideoUrl(activeVideo)} target="_blank" rel="noreferrer">Open original video <ArrowUpRight size={14} /></a><div className={`video-modal-inner ${activeVideo.platform === 'instagram' ? 'portrait' : ''}`} onClick={(event) => event.stopPropagation()}><div className="theater-reflection" /><iframe src={autoplayVideoUrl(activeVideo)} title={activeVideo.title} allow="autoplay; encrypted-media; fullscreen; picture-in-picture" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen /><div className="theater-caption"><span>{activeVideo.category === 'personal' ? 'PERSONAL CORNER' : 'SELECTED WORK'}</span><strong>{activeVideo.title}</strong><small>{activeVideo.creator}</small></div></div></div></div>}
       <Toaster theme="dark" position="bottom-right" />
     </main>
   );
