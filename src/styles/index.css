@@ -17,7 +17,7 @@ button { cursor: pointer; }
 .grid-lines { background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px); background-size: 64px 64px; inset: 0; mask-image: linear-gradient(to bottom, black, transparent 75%); opacity: .45; pointer-events: none; position: absolute; }
 .site-nav { align-items: center; display: flex; gap: 34px; justify-content: space-between; padding: 28px 0; }
 .brand { align-items: center; color: #f5f5f5; display: inline-flex; font-size: 15px; font-weight: 700; letter-spacing: -.04em; }
-.brand-mark { align-items: center; background: linear-gradient(135deg, #d8b4fe, #22d3ee); border-radius: 7px; color: #100c20; display: inline-flex; font-size: 13px; height: 27px; justify-content: center; margin-right: 9px; transform: rotate(-8deg); width: 27px; }
+.brand-mark { align-items: center; border: 1px solid #a78bfa; border-radius: 50%; color: #e9d5ff; display: inline-flex; font-family: Georgia, serif; font-size: 17px; font-style: italic; height: 27px; justify-content: center; line-height: 1; margin-right: 9px; padding-bottom: 2px; width: 27px; }
 .brand-dot { color: #22d3ee; }
 .nav-links { display: flex; gap: 28px; margin-left: auto; }
 .nav-actions { align-items: center; display: flex; gap: 14px; }
@@ -157,7 +157,7 @@ h1 em, h2 span, h3 span { color: #c084fc; font-family: Georgia, serif; font-styl
 .video-modal-inner { animation: theater-in .55s cubic-bezier(.2,.8,.2,1) both; aspect-ratio: 16 / 9; background: #000; border: 1px solid rgba(255,255,255,.32); box-shadow: -35px 45px 100px rgba(0,0,0,.75), 0 0 50px rgba(168,85,247,.22); max-width: 1000px; position: relative; transform: rotateX(3deg) rotateY(-5deg) rotateZ(-.4deg); transform-style: preserve-3d; width: 100%; }
 .video-modal-inner:before { border: 1px solid rgba(255,255,255,.12); border-radius: inherit; content: ''; inset: 10px; pointer-events: none; position: absolute; transform: translateZ(12px); z-index: 2; }
 .video-modal-inner.portrait { aspect-ratio: 9 / 16; max-height: 88vh; max-width: 480px; }
-.video-modal iframe { border: 0; height: 100%; width: 100%; }
+.video-modal iframe { border: 0; height: 100%; position: relative; width: 100%; z-index: 2; }
 .theater-reflection { background: linear-gradient(115deg, rgba(255,255,255,.25), transparent 18%, transparent 74%, rgba(192,132,252,.18)); inset: 0; pointer-events: none; position: absolute; transform: translateZ(9px); z-index: 1; }
 .theater-caption { align-items: baseline; background: linear-gradient(180deg, transparent, rgba(4,2,13,.95) 28%); bottom: 0; display: flex; gap: 14px; left: 0; padding: 45px 24px 20px; pointer-events: none; position: absolute; right: 0; transform: translateZ(14px); z-index: 3; }
 .theater-caption span { color: #c4b5fd; font-size: 9px; letter-spacing: .17em; }

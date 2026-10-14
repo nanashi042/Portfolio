@@ -220,13 +220,14 @@ function normaliseVideoUrl(rawUrl: string, platform: Video['platform']) {
 
 function autoplayVideoUrl(video: Video) {
   if (video.videoUrl.includes('drive.google.com')) {
-    return video.videoUrl.replace(/\/view(?:\?.*)?$/, '/preview');
+    const previewUrl = video.videoUrl.replace(/\/view(?:\?.*)?$/, '/preview');
+    return `${previewUrl}${previewUrl.includes('?') ? '&' : '?'}autoplay=1`;
   }
   const separator = video.videoUrl.includes('?') ? '&' : '?';
   if (video.platform === 'youtube') {
-    return `${video.videoUrl}${separator}autoplay=1&mute=1&playsinline=1&rel=0`;
+    return `${video.videoUrl}${separator}autoplay=1&mute=1&playsinline=1&controls=1&rel=0`;
   }
-  return `${video.videoUrl}${separator}autoplay=1`;
+  return video.videoUrl;
 }
 
 function AddVideoPage({ onBack }: { onBack: () => void }) {
@@ -268,7 +269,7 @@ function AddVideoPage({ onBack }: { onBack: () => void }) {
       <div className="ambient ambient-one" />
       <div className="grid-lines" />
       <nav className="site-nav container">
-        <a href="/" className="brand"><span className="brand-mark">N</span><span>Nikhil <span className="brand-dot">|</span> Editor</span></a>
+        <a href="/" className="brand"><span className="brand-mark">n</span><span>Nikhil <span className="brand-dot">|</span> Editor</span></a>
         <button className="button-quiet" onClick={onBack}>← Back to portfolio</button>
       </nav>
       <section className="container add-layout">
@@ -335,7 +336,7 @@ export default function App() {
       <div className="grid-lines" />
 
       <nav className="site-nav container">
-        <a href="#" className="brand"><span className="brand-mark">N</span><span>Nikhil <span className="brand-dot">|</span> Editor</span></a>
+        <a href="#" className="brand"><span className="brand-mark">n</span><span>Nikhil <span className="brand-dot">|</span> Editor</span></a>
         <div className={`nav-links ${menuOpen ? 'is-open' : ''}`}>
           <a href="#work" onClick={() => setMenuOpen(false)}>Selected work</a>
           <a href="#journal" onClick={() => setMenuOpen(false)}>Journal</a>
