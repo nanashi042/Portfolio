@@ -463,7 +463,7 @@ export default function App() {
           <a href="#contact" onClick={() => setMenuOpen(false)}>Contact</a>
         </div>
         <div className="nav-actions"><a href="/add" className="nav-add">+ Add work</a><a href="#book" className="nav-cta">Book a call <ArrowUpRight size={16} /></a></div>
-        <button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle navigation">{menuOpen ? <X /> : <Menu />}</button>
+        <button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle navigation" aria-expanded={menuOpen}>{menuOpen ? <X /> : <Menu />}</button>
       </nav>
 
       <section className="hero container">

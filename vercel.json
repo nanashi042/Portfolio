@@ -7,6 +7,14 @@
     {
       "source": "/add/",
       "destination": "/index.html"
+    },
+    {
+      "source": "/pricing",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/pricing/",
+      "destination": "/index.html"
     }
   ]
 }
