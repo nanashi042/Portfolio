@@ -256,6 +256,91 @@ function externalVideoUrl(video: Video) {
   return instagramId ? `https://www.instagram.com/p/${instagramId}/` : video.videoUrl;
 }
 
+const shortFormPlans = [
+  ['BASIC', '₹1,100', '$13', 'per 30-second video'],
+  ['STANDARD', '₹1,600', '$19', 'per 30-second video'],
+  ['PREMIUM', '₹2,100', '$25', 'per 30-second video'],
+];
+
+function PricingCard({ label, price, usdPrice, detail, featured = false }: { label: string; price: string; usdPrice: string; detail: string; featured?: boolean }) {
+  return (
+    <div className={`pricing-card ${featured ? 'pricing-card-featured' : ''}`}>
+      <div className="pricing-card-top"><span>{label}</span>{featured && <strong>POPULAR</strong>}</div>
+      <b>{price}</b>
+      <span className="pricing-usd">approx. {usdPrice} USD</span>
+      <p>{detail}</p>
+    </div>
+  );
+}
+
+function PricingPage({ onBack }: { onBack: () => void }) {
+  return (
+    <main className="site-shell pricing-page">
+      <div className="ambient ambient-one" />
+      <div className="ambient ambient-two" />
+      <div className="grid-lines" />
+      <nav className="site-nav container">
+        <a href="/" className="brand"><span className="brand-mark">n</span><span>Nikhil <span className="brand-dot">|</span> Editor</span></a>
+        <button className="button-quiet" onClick={onBack}>← Back to portfolio</button>
+      </nav>
+
+      <header className="container pricing-hero">
+        <span className="section-kicker">Service pricing</span>
+        <h1>Edits that keep<br /><em>viewers watching.</em></h1>
+        <p>Transparent, per-project pricing. USD equivalents are approximate and may vary with exchange rates.</p>
+      </header>
+
+      <div className="container pricing-content">
+        <section className="pricing-section">
+          <div className="pricing-heading"><h2><span>01</span> Short-form</h2><p>Reels · Shorts · TikTok · 30 seconds</p></div>
+          <div className="pricing-grid pricing-grid-three">
+            {shortFormPlans.map(([label, price, usdPrice, detail], index) => <PricingCard key={label} label={label} price={price} usdPrice={usdPrice} detail={detail} featured={index === 1} />)}
+          </div>
+        </section>
+
+        <section className="pricing-section">
+          <div className="pricing-heading"><h2><span>02</span> Long-form · Basic edit</h2><p>YouTube videos, vlogs, podcasts</p></div>
+          <div className="pricing-grid pricing-grid-two">
+            <PricingCard label="STARTING PRICE" price="₹10,000" usdPrice="$118" detail="for up to 10 minutes of final video" />
+            <PricingCard label="ADDITIONAL LENGTH" price="+ ₹1,000" usdPrice="+ $12" detail="for every extra minute beyond 10" />
+          </div>
+        </section>
+
+        <section className="pricing-section">
+          <div className="pricing-heading"><h2><span>03</span> Documentary-style + Motion graphics</h2><p>Storytelling, animated graphics, polish</p></div>
+          <div className="pricing-grid pricing-grid-two">
+            <PricingCard label="STARTING PRICE" price="₹17,000" usdPrice="$200" detail="for up to 10 minutes of final video" />
+            <PricingCard label="ADDITIONAL LENGTH" price="+ ₹1,700" usdPrice="+ $20" detail="for every extra minute beyond 10" />
+          </div>
+        </section>
+
+        <section className="quick-examples">
+          <span className="pricing-label">Quick examples</span>
+          <div className="example-row"><span>15-min basic edit</span><strong>₹10,000 + 5 × ₹1,000 = ₹15,000 <small>(approx. $176)</small></strong></div>
+          <div className="example-row"><span>15-min documentary edit</span><strong>₹17,000 + 5 × ₹1,700 = ₹25,500 <small>(approx. $300)</small></strong></div>
+        </section>
+
+        <section className="pricing-cta-grid">
+          <div className="pricing-cta pricing-cta-work">
+            <h2>Ready to start?</h2>
+            <p>View my work and get in touch.</p>
+            <a href="/" onClick={onBack}>www.nikfolio.tech <ArrowUpRight size={16} /></a>
+            <a href="/#book" className="pricing-link">Let&apos;s work together <ArrowUpRight size={16} /></a>
+          </div>
+          <div className="pricing-cta pricing-cta-payment">
+            <span className="pricing-label">Pay by UPI</span>
+            <strong>nimbuuz@slc</strong>
+            <p>Scan the QR or pay to this UPI ID using any UPI app.</p>
+            <small>Payee: Nikhil</small>
+          </div>
+        </section>
+        <p className="pricing-disclaimer">Prices are indicative and may vary with footage volume, revisions and turnaround time.</p>
+      </div>
+      <Toaster theme="dark" position="bottom-right" />
+    </main>
+  );
+}
+
 function AddVideoPage({ onBack }: { onBack: () => void }) {
   const [title, setTitle] = useState('');
   const [creator, setCreator] = useState('');
@@ -354,6 +439,9 @@ export default function App() {
   if (window.location.pathname === '/add') {
     return <AddVideoPage onBack={() => { window.location.href = '/'; }} />;
   }
+  if (window.location.pathname === '/pricing') {
+    return <PricingPage onBack={() => { window.location.href = '/'; }} />;
+  }
 
   const allVideos = [...customVideos, ...videos];
   const shortVideos = allVideos.filter((video) => video.category === 'short');
@@ -369,6 +457,7 @@ export default function App() {
         <a href="#" className="brand"><span className="brand-mark">n</span><span>Nikhil <span className="brand-dot">|</span> Editor</span></a>
         <div className={`nav-links ${menuOpen ? 'is-open' : ''}`}>
           <a href="#work" onClick={() => setMenuOpen(false)}>Selected work</a>
+          <a href="/pricing" onClick={() => setMenuOpen(false)}>Pricing</a>
           <a href="#journal" onClick={() => setMenuOpen(false)}>Journal</a>
           <a href="#about" onClick={() => setMenuOpen(false)}>About</a>
           <a href="#contact" onClick={() => setMenuOpen(false)}>Contact</a>
