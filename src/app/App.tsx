@@ -1,11 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'motion/react';
 import {
   ArrowUpRight,
-  Download,
-  BookOpen,
   Film,
-  Headphones,
   Instagram,
   Linkedin,
   Mail,
@@ -13,7 +10,6 @@ import {
   Phone,
   Play,
   Sparkles,
-  Package,
   X,
   Youtube,
 } from 'lucide-react';
@@ -348,145 +344,6 @@ function PricingPage({ onBack }: { onBack: () => void }) {
   );
 }
 
-const storeProducts = [
-  {
-    number: '01',
-    icon: Headphones,
-    label: 'Sound effects',
-    title: 'Sounds with a pulse.',
-    description: 'Curated sound-effect packs for punchier cuts, cleaner transitions, and more cinematic stories.',
-    detail: 'SFX packs · WAV files',
-    tone: 'store-card-violet',
-  },
-  {
-    number: '02',
-    icon: BookOpen,
-    label: 'Business ebooks',
-    title: 'Grow with intention.',
-    description: 'Practical guides about building a business, finding your audience, and turning attention into momentum.',
-    detail: 'Digital books · Instant access',
-    tone: 'store-card-cyan',
-  },
-  {
-    number: '03',
-    icon: Package,
-    label: 'Editing assets',
-    title: 'A faster edit suite.',
-    description: 'Templates, presets, overlays, and workflow tools made to help creators spend more time on the idea.',
-    detail: 'Templates · Presets · Overlays',
-    tone: 'store-card-pink',
-  },
-];
-
-function SfxSuccessPage() {
-  const [status, setStatus] = useState<'checking' | 'ready' | 'invalid'>('checking');
-  const [downloadUrl, setDownloadUrl] = useState('');
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const orderId = params.get('order_id');
-    if (!orderId) {
-      setStatus('invalid');
-      return;
-    }
-    const query = new URLSearchParams({ order_id: orderId });
-    fetch(`/api/verify-payment?${query}`)
-      .then((response) => {
-        if (!response.ok) throw new Error('Payment could not be verified');
-        setDownloadUrl(`/api/download-sfx?${query}`);
-        setStatus('ready');
-      })
-      .catch(() => setStatus('invalid'));
-  }, []);
-
-  return (
-    <main className="site-shell store-page">
-      <div className="ambient ambient-one" />
-      <div className="ambient ambient-two" />
-      <div className="grid-lines" />
-      <nav className="site-nav container">
-        <a href="/" className="brand"><span className="brand-mark">n</span><span>Nikhil <span className="brand-dot">|</span> Editor</span></a>
-        <a className="button-quiet" href="/store">← Back to store</a>
-      </nav>
-      <section className="container sfx-success glass-card">
-        <span className="section-kicker">MEMES &amp; COMEDY SFX</span>
-        <h1>Your sounds<br /><em>are ready.</em></h1>
-        {status === 'checking' && <p>Verifying your payment…</p>}
-        {status === 'ready' && <><p>Thanks for your purchase. Download the complete sound effects pack below.</p><a className="button-primary" href={downloadUrl}>Download the SFX pack <Download size={18} /></a></>}
-        {status === 'invalid' && <p>We couldn&apos;t verify this payment. Please use the redirect from Cashfree after completing payment, or contact <a href="mailto:nikhmdia@gmail.com">nikhmdia@gmail.com</a>.</p>}
-        <small>Your payment is checked securely with Cashfree before the download is enabled.</small>
-      </section>
-      <footer className="container store-footer"><span>© 2025 Nikhil | Editor</span><a href="/">Back to nikfolio.tech <ArrowUpRight size={15} /></a></footer>
-    </main>
-  );
-}
-
-function StorePage({ onBack }: { onBack: () => void }) {
-  const [showCheckout, setShowCheckout] = useState(false);
-  const [checkoutError, setCheckoutError] = useState('');
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const startCheckout = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setCheckoutLoading(true);
-    setCheckoutError('');
-    const form = new FormData(event.currentTarget);
-    try {
-      const response = await fetch('/api/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: form.get('name'), email: form.get('email'), phone: form.get('phone') }),
-      });
-      const contentType = response.headers.get('content-type') || '';
-      if (!contentType.includes('application/json')) {
-        throw new Error('Checkout API is unavailable in the Vite preview. Run the Vercel API locally or deploy the site to use Cashfree checkout.');
-      }
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Could not start checkout.');
-      const cashfree = (window as any).Cashfree ? (window as any).Cashfree({ mode: 'production' }) : null;
-      if (!cashfree) throw new Error('Cashfree checkout did not load. Refresh and try again.');
-      await cashfree.checkout({ paymentSessionId: result.paymentSessionId, redirectTarget: '_self' });
-    } catch (error) {
-      setCheckoutError(error instanceof Error ? error.message : 'Could not start checkout. Please try again.');
-      setCheckoutLoading(false);
-    }
-  };
-  return (
-    <main className="site-shell store-page">
-      <div className="ambient ambient-one" />
-      <div className="ambient ambient-two" />
-      <div className="grid-lines" />
-      <nav className="site-nav container">
-        <a href="/" className="brand"><span className="brand-mark">n</span><span>Nikhil <span className="brand-dot">|</span> Editor</span></a>
-        <button className="button-quiet" onClick={onBack}>← Back to portfolio</button>
-      </nav>
-
-      <header className="container store-hero">
-        <div>
-          <span className="section-kicker">Digital goods / 01</span>
-          <h1>Tools for<br /><em>making more.</em></h1>
-        </div>
-        <p>A growing shelf of things I use, make, and believe in — for editors, creators, and people building something of their own.</p>
-      </header>
-
-      <section className="container store-content">
-        <div className="store-intro"><span>THE STORE</span><small>Digital products, made carefully.</small></div>
-        <div className="store-grid">
-          {storeProducts.map(({ number, icon: Icon, label, title, description, detail, tone }, index) => (
-            <article className={`store-card ${tone}`} key={label}>
-              <div className="store-card-art"><span className="store-number">{number}</span><Icon size={42} strokeWidth={1.2} /><span className="store-art-label">{label}</span></div>
-              <div className="store-card-copy"><span className="eyebrow">{label}</span><h2>{index === 0 ? 'Memes & Comedy SFX' : title}</h2><p>{index === 0 ? 'A punchy collection of meme, reaction, and comedy sound effects for your next edit.' : description}</p><div className="store-card-footer"><small>{detail}</small>{index === 0 ? <button type="button" onClick={() => setShowCheckout((show) => !show)}>Buy &amp; download <ArrowUpRight size={16} /></button> : <a href="mailto:nikhmdia@gmail.com?subject=Store%20product%20interest">Get notified <ArrowUpRight size={16} /></a>}</div>
-                {index === 0 && showCheckout && <form className="sfx-checkout-form" onSubmit={startCheckout}><label>Name<input name="name" required autoComplete="name" /></label><label>Email<input name="email" type="email" required autoComplete="email" /></label><label>Phone<input name="phone" type="tel" required autoComplete="tel" /></label><button className="button-primary" type="submit" disabled={checkoutLoading}>{checkoutLoading ? 'Preparing download…' : 'Download'}</button>{checkoutError && <p role="alert">{checkoutError}</p>}</form>}
-              </div>
-            </article>
-          ))}
-        </div>
-        <div className="store-note glass-card"><Sparkles size={18} /><p>Have a question about the SFX pack?</p><a href="mailto:nikhmdia@gmail.com?subject=Memes%20%26%20Comedy%20SFX">Get in touch <ArrowUpRight size={16} /></a></div>
-      </section>
-      <footer className="container store-footer"><span>© 2025 Nikhil | Editor</span><a href="/">Back to nikfolio.tech <ArrowUpRight size={15} /></a></footer>
-    </main>
-  );
-}
-
 function AddVideoPage({ onBack }: { onBack: () => void }) {
   const [title, setTitle] = useState('');
   const [creator, setCreator] = useState('');
@@ -588,12 +445,6 @@ export default function App() {
   if (window.location.pathname === '/pricing') {
     return <PricingPage onBack={() => { window.location.href = '/'; }} />;
   }
-  if (window.location.pathname === '/store') {
-    return <StorePage onBack={() => { window.location.href = '/'; }} />;
-  }
-  if (window.location.pathname === '/store/success') {
-    return <SfxSuccessPage />;
-  }
 
   const allVideos = [...customVideos, ...videos];
   const shortVideos = allVideos.filter((video) => video.category === 'short');
@@ -610,7 +461,6 @@ export default function App() {
         <div className={`nav-links ${menuOpen ? 'is-open' : ''}`}>
           <a href="#work" onClick={() => setMenuOpen(false)}>Selected work</a>
           <a href="/pricing" onClick={() => setMenuOpen(false)}>Pricing</a>
-          <a href="/store" onClick={() => setMenuOpen(false)}>Store</a>
           <a href="#journal" onClick={() => setMenuOpen(false)}>Journal</a>
           <a href="#about" onClick={() => setMenuOpen(false)}>About</a>
           <a href="#contact" onClick={() => setMenuOpen(false)}>Contact</a>
