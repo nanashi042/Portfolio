@@ -378,20 +378,18 @@ const storeProducts = [
   },
 ];
 
-const sfxPaymentUrl = 'https://rzp.io/rzp/eMJWYAM';
 function SfxSuccessPage() {
   const [status, setStatus] = useState<'checking' | 'ready' | 'invalid'>('checking');
   const [downloadUrl, setDownloadUrl] = useState('');
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const paymentLinkId = params.get('razorpay_payment_link_id');
-    const paymentId = params.get('razorpay_payment_id');
-    if (!paymentLinkId || !paymentId) {
+    const orderId = params.get('order_id');
+    if (!orderId) {
       setStatus('invalid');
       return;
     }
-    const query = new URLSearchParams({ payment_link_id: paymentLinkId, payment_id: paymentId });
+    const query = new URLSearchParams({ order_id: orderId });
     fetch(`/api/verify-payment?${query}`)
       .then((response) => {
         if (!response.ok) throw new Error('Payment could not be verified');
@@ -415,8 +413,8 @@ function SfxSuccessPage() {
         <h1>Your sounds<br /><em>are ready.</em></h1>
         {status === 'checking' && <p>Verifying your payment…</p>}
         {status === 'ready' && <><p>Thanks for your purchase. Download the complete sound effects pack below.</p><a className="button-primary" href={downloadUrl}>Download the SFX pack <Download size={18} /></a></>}
-        {status === 'invalid' && <p>We couldn&apos;t verify this payment. Please use the redirect from Razorpay after completing payment, or contact <a href="mailto:nikhmdia@gmail.com">nikhmdia@gmail.com</a>.</p>}
-        <small>Your payment is checked securely with Razorpay before the download is enabled.</small>
+        {status === 'invalid' && <p>We couldn&apos;t verify this payment. Please use the redirect from Cashfree after completing payment, or contact <a href="mailto:nikhmdia@gmail.com">nikhmdia@gmail.com</a>.</p>}
+        <small>Your payment is checked securely with Cashfree before the download is enabled.</small>
       </section>
       <footer className="container store-footer"><span>© 2025 Nikhil | Editor</span><a href="/">Back to nikfolio.tech <ArrowUpRight size={15} /></a></footer>
     </main>
@@ -424,6 +422,34 @@ function SfxSuccessPage() {
 }
 
 function StorePage({ onBack }: { onBack: () => void }) {
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [checkoutError, setCheckoutError] = useState('');
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const startCheckout = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setCheckoutLoading(true);
+    setCheckoutError('');
+    const form = new FormData(event.currentTarget);
+    try {
+      const response = await fetch('/api/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: form.get('name'), email: form.get('email'), phone: form.get('phone') }),
+      });
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        throw new Error('Checkout API is unavailable in the Vite preview. Run the Vercel API locally or deploy the site to use Cashfree checkout.');
+      }
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not start checkout.');
+      const cashfree = (window as any).Cashfree ? (window as any).Cashfree({ mode: 'production' }) : null;
+      if (!cashfree) throw new Error('Cashfree checkout did not load. Refresh and try again.');
+      await cashfree.checkout({ paymentSessionId: result.paymentSessionId, redirectTarget: '_self' });
+    } catch (error) {
+      setCheckoutError(error instanceof Error ? error.message : 'Could not start checkout. Please try again.');
+      setCheckoutLoading(false);
+    }
+  };
   return (
     <main className="site-shell store-page">
       <div className="ambient ambient-one" />
@@ -448,7 +474,9 @@ function StorePage({ onBack }: { onBack: () => void }) {
           {storeProducts.map(({ number, icon: Icon, label, title, description, detail, tone }, index) => (
             <article className={`store-card ${tone}`} key={label}>
               <div className="store-card-art"><span className="store-number">{number}</span><Icon size={42} strokeWidth={1.2} /><span className="store-art-label">{label}</span></div>
-              <div className="store-card-copy"><span className="eyebrow">{label}</span><h2>{index === 0 ? 'Memes & Comedy SFX' : title}</h2><p>{index === 0 ? 'A punchy collection of meme, reaction, and comedy sound effects for your next edit.' : description}</p><div className="store-card-footer"><small>{detail}</small>{index === 0 ? <a href={sfxPaymentUrl} target="_blank" rel="noreferrer">Buy &amp; download <ArrowUpRight size={16} /></a> : <a href="mailto:nikhmdia@gmail.com?subject=Store%20product%20interest">Get notified <ArrowUpRight size={16} /></a>}</div></div>
+              <div className="store-card-copy"><span className="eyebrow">{label}</span><h2>{index === 0 ? 'Memes & Comedy SFX' : title}</h2><p>{index === 0 ? 'A punchy collection of meme, reaction, and comedy sound effects for your next edit.' : description}</p><div className="store-card-footer"><small>{detail}</small>{index === 0 ? <button type="button" onClick={() => setShowCheckout((show) => !show)}>Buy &amp; download <ArrowUpRight size={16} /></button> : <a href="mailto:nikhmdia@gmail.com?subject=Store%20product%20interest">Get notified <ArrowUpRight size={16} /></a>}</div>
+                {index === 0 && showCheckout && <form className="sfx-checkout-form" onSubmit={startCheckout}><label>Name<input name="name" required autoComplete="name" /></label><label>Email<input name="email" type="email" required autoComplete="email" /></label><label>Phone<input name="phone" type="tel" required autoComplete="tel" /></label><button className="button-primary" type="submit" disabled={checkoutLoading}>{checkoutLoading ? 'Preparing download…' : 'Download'}</button>{checkoutError && <p role="alert">{checkoutError}</p>}</form>}
+              </div>
             </article>
           ))}
         </div>
