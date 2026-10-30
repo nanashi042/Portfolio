@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/store",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/store/",
+      "destination": "/index.html"
+    },
+    {
       "source": "/add",
       "destination": "/index.html"
     },
@@ -14,6 +22,14 @@
     },
     {
       "source": "/pricing/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/store/success",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/store/success/",
       "destination": "/index.html"
     }
   ]

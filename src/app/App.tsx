@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import {
   ArrowUpRight,
+  Download,
+  BookOpen,
   Film,
+  Headphones,
   Instagram,
   Linkedin,
   Mail,
@@ -10,6 +13,7 @@ import {
   Phone,
   Play,
   Sparkles,
+  Package,
   X,
   Youtube,
 } from 'lucide-react';
@@ -229,7 +233,7 @@ function normaliseVideoUrl(rawUrl: string, platform: Video['platform']) {
   const url = rawUrl.trim();
   if (platform === 'instagram') {
     const match = url.match(/instagram\.com\/(?:p|reel|tv)\/([^/?#]+)/i);
-    return match ? `https://www.instagram.com/${url.includes('/reel/') ? 'reel' : 'p'}/${match[1]}/embed` : url;
+    return match ? `https://www.instagram.com/${url.includes('/reel/') ? 'reel' : 'p'}/${match[1]}/embed/captioned/` : url;
   }
   const youtubeMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/))([^?&#/]+)/i);
   if (youtubeMatch) return `https://www.youtube.com/embed/${youtubeMatch[1]}`;
@@ -241,6 +245,9 @@ function autoplayVideoUrl(video: Video) {
   if (video.videoUrl.includes('drive.google.com')) {
     const previewUrl = video.videoUrl.replace(/\/view(?:\?.*)?$/, '/preview');
     return `${previewUrl}${previewUrl.includes('?') ? '&' : '?'}autoplay=1`;
+  }
+  if (video.platform === 'instagram') {
+    return video.videoUrl.replace(/\/embed\/?$/, '/embed/captioned/');
   }
   const separator = video.videoUrl.includes('?') ? '&' : '?';
   if (video.platform === 'youtube') {
@@ -337,6 +344,117 @@ function PricingPage({ onBack }: { onBack: () => void }) {
         <p className="pricing-disclaimer">Prices are indicative and may vary with footage volume, revisions and turnaround time.</p>
       </div>
       <Toaster theme="dark" position="bottom-right" />
+    </main>
+  );
+}
+
+const storeProducts = [
+  {
+    number: '01',
+    icon: Headphones,
+    label: 'Sound effects',
+    title: 'Sounds with a pulse.',
+    description: 'Curated sound-effect packs for punchier cuts, cleaner transitions, and more cinematic stories.',
+    detail: 'SFX packs · WAV files',
+    tone: 'store-card-violet',
+  },
+  {
+    number: '02',
+    icon: BookOpen,
+    label: 'Business ebooks',
+    title: 'Grow with intention.',
+    description: 'Practical guides about building a business, finding your audience, and turning attention into momentum.',
+    detail: 'Digital books · Instant access',
+    tone: 'store-card-cyan',
+  },
+  {
+    number: '03',
+    icon: Package,
+    label: 'Editing assets',
+    title: 'A faster edit suite.',
+    description: 'Templates, presets, overlays, and workflow tools made to help creators spend more time on the idea.',
+    detail: 'Templates · Presets · Overlays',
+    tone: 'store-card-pink',
+  },
+];
+
+const sfxPaymentUrl = 'https://rzp.io/rzp/eMJWYAM';
+function SfxSuccessPage() {
+  const [status, setStatus] = useState<'checking' | 'ready' | 'invalid'>('checking');
+  const [downloadUrl, setDownloadUrl] = useState('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paymentLinkId = params.get('razorpay_payment_link_id');
+    const paymentId = params.get('razorpay_payment_id');
+    if (!paymentLinkId || !paymentId) {
+      setStatus('invalid');
+      return;
+    }
+    const query = new URLSearchParams({ payment_link_id: paymentLinkId, payment_id: paymentId });
+    fetch(`/api/verify-payment?${query}`)
+      .then((response) => {
+        if (!response.ok) throw new Error('Payment could not be verified');
+        setDownloadUrl(`/api/download-sfx?${query}`);
+        setStatus('ready');
+      })
+      .catch(() => setStatus('invalid'));
+  }, []);
+
+  return (
+    <main className="site-shell store-page">
+      <div className="ambient ambient-one" />
+      <div className="ambient ambient-two" />
+      <div className="grid-lines" />
+      <nav className="site-nav container">
+        <a href="/" className="brand"><span className="brand-mark">n</span><span>Nikhil <span className="brand-dot">|</span> Editor</span></a>
+        <a className="button-quiet" href="/store">← Back to store</a>
+      </nav>
+      <section className="container sfx-success glass-card">
+        <span className="section-kicker">MEMES &amp; COMEDY SFX</span>
+        <h1>Your sounds<br /><em>are ready.</em></h1>
+        {status === 'checking' && <p>Verifying your payment…</p>}
+        {status === 'ready' && <><p>Thanks for your purchase. Download the complete sound effects pack below.</p><a className="button-primary" href={downloadUrl}>Download the SFX pack <Download size={18} /></a></>}
+        {status === 'invalid' && <p>We couldn&apos;t verify this payment. Please use the redirect from Razorpay after completing payment, or contact <a href="mailto:nikhmdia@gmail.com">nikhmdia@gmail.com</a>.</p>}
+        <small>Your payment is checked securely with Razorpay before the download is enabled.</small>
+      </section>
+      <footer className="container store-footer"><span>© 2025 Nikhil | Editor</span><a href="/">Back to nikfolio.tech <ArrowUpRight size={15} /></a></footer>
+    </main>
+  );
+}
+
+function StorePage({ onBack }: { onBack: () => void }) {
+  return (
+    <main className="site-shell store-page">
+      <div className="ambient ambient-one" />
+      <div className="ambient ambient-two" />
+      <div className="grid-lines" />
+      <nav className="site-nav container">
+        <a href="/" className="brand"><span className="brand-mark">n</span><span>Nikhil <span className="brand-dot">|</span> Editor</span></a>
+        <button className="button-quiet" onClick={onBack}>← Back to portfolio</button>
+      </nav>
+
+      <header className="container store-hero">
+        <div>
+          <span className="section-kicker">Digital goods / 01</span>
+          <h1>Tools for<br /><em>making more.</em></h1>
+        </div>
+        <p>A growing shelf of things I use, make, and believe in — for editors, creators, and people building something of their own.</p>
+      </header>
+
+      <section className="container store-content">
+        <div className="store-intro"><span>THE STORE</span><small>Digital products, made carefully.</small></div>
+        <div className="store-grid">
+          {storeProducts.map(({ number, icon: Icon, label, title, description, detail, tone }, index) => (
+            <article className={`store-card ${tone}`} key={label}>
+              <div className="store-card-art"><span className="store-number">{number}</span><Icon size={42} strokeWidth={1.2} /><span className="store-art-label">{label}</span></div>
+              <div className="store-card-copy"><span className="eyebrow">{label}</span><h2>{index === 0 ? 'Memes & Comedy SFX' : title}</h2><p>{index === 0 ? 'A punchy collection of meme, reaction, and comedy sound effects for your next edit.' : description}</p><div className="store-card-footer"><small>{detail}</small>{index === 0 ? <a href={sfxPaymentUrl} target="_blank" rel="noreferrer">Buy &amp; download <ArrowUpRight size={16} /></a> : <a href="mailto:nikhmdia@gmail.com?subject=Store%20product%20interest">Get notified <ArrowUpRight size={16} /></a>}</div></div>
+            </article>
+          ))}
+        </div>
+        <div className="store-note glass-card"><Sparkles size={18} /><p>Have a question about the SFX pack?</p><a href="mailto:nikhmdia@gmail.com?subject=Memes%20%26%20Comedy%20SFX">Get in touch <ArrowUpRight size={16} /></a></div>
+      </section>
+      <footer className="container store-footer"><span>© 2025 Nikhil | Editor</span><a href="/">Back to nikfolio.tech <ArrowUpRight size={15} /></a></footer>
     </main>
   );
 }
@@ -442,6 +560,12 @@ export default function App() {
   if (window.location.pathname === '/pricing') {
     return <PricingPage onBack={() => { window.location.href = '/'; }} />;
   }
+  if (window.location.pathname === '/store') {
+    return <StorePage onBack={() => { window.location.href = '/'; }} />;
+  }
+  if (window.location.pathname === '/store/success') {
+    return <SfxSuccessPage />;
+  }
 
   const allVideos = [...customVideos, ...videos];
   const shortVideos = allVideos.filter((video) => video.category === 'short');
@@ -458,6 +582,7 @@ export default function App() {
         <div className={`nav-links ${menuOpen ? 'is-open' : ''}`}>
           <a href="#work" onClick={() => setMenuOpen(false)}>Selected work</a>
           <a href="/pricing" onClick={() => setMenuOpen(false)}>Pricing</a>
+          <a href="/store" onClick={() => setMenuOpen(false)}>Store</a>
           <a href="#journal" onClick={() => setMenuOpen(false)}>Journal</a>
           <a href="#about" onClick={() => setMenuOpen(false)}>About</a>
           <a href="#contact" onClick={() => setMenuOpen(false)}>Contact</a>
@@ -500,6 +625,13 @@ export default function App() {
         <div className="container signal-inner"><span>Selected clients</span><span>Jhansi Way</span><span>The Top Percentile</span><span>Ask Life With Anmol</span><span>Aditya TTP</span></div>
       </section>
 
+      <section className="section personal-section">
+        <div className="container">
+          <div className="section-heading"><div><span className="section-kicker">01.5 / Personal corner</span><h2>Off the clock,<br /><span>still creating.</span></h2></div><p>A little space for experiments, visual notes, and edits made just because the idea would not leave me alone.</p></div>
+          <div className="personal-grid">{personalVideos.map((video, index) => <VideoCard key={video.id} video={video} number={index + 1} onOpen={setActiveVideo} />)}</div>
+        </div>
+      </section>
+
       <section id="work" className="section container">
         <div className="section-heading"><div><span className="section-kicker">01 / Selected work</span><h2>Made to be <span>felt.</span></h2></div><p>Every cut has a job: hold attention, sharpen an idea, or make someone press replay.</p></div>
         <div className="work-block">
@@ -509,13 +641,6 @@ export default function App() {
         <div className="work-block long-work">
           <div className="sub-heading"><div><span className="section-kicker">Room for the story</span><h3>Long form <span>/</span> 16:9</h3></div><a href="#contact">See all films <ArrowUpRight size={16} /></a></div>
           <div className="long-grid">{longVideos.map((video, index) => <VideoCard key={video.id} video={video} number={index + 1} onOpen={setActiveVideo} />)}</div>
-        </div>
-      </section>
-
-      <section className="section personal-section">
-        <div className="container">
-          <div className="section-heading"><div><span className="section-kicker">01.5 / Personal corner</span><h2>Off the clock,<br /><span>still creating.</span></h2></div><p>A little space for experiments, visual notes, and edits made just because the idea would not leave me alone.</p></div>
-          <div className="personal-grid">{personalVideos.map((video, index) => <VideoCard key={video.id} video={video} number={index + 1} onOpen={setActiveVideo} />)}</div>
         </div>
       </section>
 
@@ -548,7 +673,7 @@ export default function App() {
 
       <footer id="contact" className="site-footer container"><div className="footer-main"><a href="#" className="brand"><span className="brand-mark">N</span><span>Nikhil <span className="brand-dot">|</span> Editor</span></a><h2>Let's make<br /><span>the next frame.</span></h2><a className="footer-email" href="mailto:nikhmdia@gmail.com">nikhmdia@gmail.com <ArrowUpRight size={20} /></a></div><div className="footer-bottom"><span>© 2025 Nikhil | Editor</span><span>Designed & edited with intent</span><div className="socials"><a href="https://instagram.com/nimbuuz.mov" aria-label="Instagram"><Instagram size={17} /></a><a href="https://www.youtube.com" aria-label="YouTube"><Youtube size={17} /></a><a href="https://linkedin.com" aria-label="LinkedIn"><Linkedin size={17} /></a></div></div></footer>
 
-      {activeVideo && <div className="video-modal" role="dialog" aria-modal="true" onClick={(event) => { if (event.target === event.currentTarget) setActiveVideo(null); }}><div className="theater-stage"><button className="modal-close" onClick={() => setActiveVideo(null)} aria-label="Close video"><X /></button><a className="video-external-link" href={externalVideoUrl(activeVideo)} target="_blank" rel="noreferrer">Open original video <ArrowUpRight size={14} /></a><div className={`video-modal-inner ${activeVideo.platform === 'instagram' ? 'portrait' : ''}`} onClick={(event) => event.stopPropagation()}><div className="theater-reflection" /><iframe src={autoplayVideoUrl(activeVideo)} title={activeVideo.title} allow="autoplay; encrypted-media; fullscreen; picture-in-picture" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen /><div className="theater-caption"><span>{activeVideo.category === 'personal' ? 'PERSONAL CORNER' : 'SELECTED WORK'}</span><strong>{activeVideo.title}</strong><small>{activeVideo.creator}</small></div></div></div></div>}
+      {activeVideo && <div className="video-modal" role="dialog" aria-modal="true" onClick={(event) => { if (event.target === event.currentTarget) setActiveVideo(null); }}><div className="theater-stage"><button className="modal-close" onClick={() => setActiveVideo(null)} aria-label="Close video"><X /></button><a className="video-external-link" href={externalVideoUrl(activeVideo)} target="_blank" rel="noreferrer">Open original video <ArrowUpRight size={14} /></a><div className={`video-modal-inner ${activeVideo.platform === 'instagram' ? 'portrait' : ''}`} onClick={(event) => event.stopPropagation()}><div className="theater-reflection" /><iframe src={autoplayVideoUrl(activeVideo)} title={activeVideo.title} loading="eager" allow="autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen /><div className="theater-caption"><span>{activeVideo.category === 'personal' ? 'PERSONAL CORNER' : 'SELECTED WORK'}</span><strong>{activeVideo.title}</strong><small>{activeVideo.creator}</small></div></div></div></div>}
       <Toaster theme="dark" position="bottom-right" />
     </main>
   );
