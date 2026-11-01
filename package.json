@@ -5,7 +5,11 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "dev": "vite"
+    "dev": "vite",
+    "start": "node server.mjs"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
