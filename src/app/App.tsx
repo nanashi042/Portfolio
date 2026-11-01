@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { motion } from 'motion/react';
 import {
   ArrowUpRight,
@@ -7,9 +7,13 @@ import {
   Linkedin,
   Mail,
   Menu,
+  Plus,
   Phone,
   Play,
+  Printer,
+  Receipt,
   Sparkles,
+  Trash2,
   X,
   Youtube,
 } from 'lucide-react';
@@ -414,6 +418,163 @@ function AddVideoPage({ onBack }: { onBack: () => void }) {
   );
 }
 
+function InvoiceLogin({ onBack }: { onBack: () => void }) {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+
+  const signIn = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (username.trim() === 'nanashi' && password === 'nanashi@280208') {
+      sessionStorage.setItem('nimbuuz-invoice-auth', 'true');
+      window.location.reload();
+      return;
+    }
+    toast.error('Incorrect username or password.');
+  };
+
+  return (
+    <main className="site-shell invoice-page login-page">
+      <div className="ambient ambient-one" />
+      <div className="grid-lines" />
+      <nav className="site-nav container invoice-nav">
+        <a href="/" className="brand"><span className="brand-mark">n</span><span>Nikhil <span className="brand-dot">|</span> Editor</span></a>
+        <button className="button-quiet" onClick={onBack}>← Back to portfolio</button>
+      </nav>
+      <section className="login-shell container">
+        <div className="invoice-intro"><span className="section-kicker">Private studio tool</span><h1>Sign in<br /><em>to invoices.</em></h1><p>This workspace is private. Sign in to create and print invoices.</p></div>
+        <form className="glass-card login-card" onSubmit={signIn}>
+          <div className="booking-top"><span>PRIVATE ACCESS</span><Receipt size={17} /></div>
+          <label>Username<input autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} placeholder="Username" /></label>
+          <label>Password<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password" /></label>
+          <button type="submit" className="button-primary submit-button">Sign in <ArrowUpRight size={17} /></button>
+          <p className="form-note">Your login stays active for this browser session.</p>
+        </form>
+      </section>
+      <Toaster theme="dark" position="bottom-right" />
+    </main>
+  );
+}
+
+type InvoiceItem = {
+  id: number;
+  description: string;
+  quantity: number;
+  rate: number;
+};
+
+const invoiceToday = new Date().toISOString().slice(0, 10);
+
+function InvoicePage({ onBack }: { onBack: () => void }) {
+  const [invoiceNumber, setInvoiceNumber] = useState(`INV-${invoiceToday.replace(/-/g, '')}`);
+  const [invoiceDate, setInvoiceDate] = useState(invoiceToday);
+  const [dueDate, setDueDate] = useState(invoiceToday);
+  const [clientName, setClientName] = useState('');
+  const [clientEmail, setClientEmail] = useState('');
+  const [clientAddress, setClientAddress] = useState('');
+  const [tax, setTax] = useState(0);
+  const [discount, setDiscount] = useState(0);
+  const [notes, setNotes] = useState('Thank you for working with me.');
+  const [items, setItems] = useState<InvoiceItem[]>([
+    { id: 1, description: 'Video editing', quantity: 1, rate: 0 },
+  ]);
+
+  const subtotal = items.reduce((total, item) => total + item.quantity * item.rate, 0);
+  const discountAmount = subtotal * (discount / 100);
+  const taxableAmount = Math.max(0, subtotal - discountAmount);
+  const taxAmount = taxableAmount * (tax / 100);
+  const total = taxableAmount + taxAmount;
+  const money = (value: number) => `₹${value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+  const displayDate = (value: string) => value ? new Date(`${value}T00:00:00`).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+
+  const updateItem = (id: number, field: keyof InvoiceItem, value: string) => {
+    setItems((current) => current.map((item) => item.id === id
+      ? { ...item, [field]: field === 'description' ? value : Math.max(0, Number(value) || 0) }
+      : item));
+  };
+
+  const printInvoice = () => {
+    if (!clientName.trim()) {
+      toast.error('Add the client name before generating the invoice.');
+      return;
+    }
+    const originalTitle = document.title;
+    document.title = `Invoice ${invoiceNumber}`;
+    window.print();
+    window.setTimeout(() => { document.title = originalTitle; }, 1000);
+  };
+
+  return (
+    <main className="site-shell invoice-page">
+      <div className="ambient ambient-one" />
+      <div className="grid-lines" />
+      <nav className="site-nav container invoice-nav">
+        <a href="/" className="brand"><span className="brand-mark">n</span><span>Nikhil <span className="brand-dot">|</span> Editor</span></a>
+        <div className="invoice-nav-actions"><button className="button-quiet" onClick={() => { sessionStorage.removeItem('nimbuuz-invoice-auth'); window.location.reload(); }}>Log out</button><button className="button-quiet" onClick={onBack}>← Back to portfolio</button></div>
+      </nav>
+
+      <section className="container invoice-layout">
+        <div className="invoice-intro">
+          <span className="section-kicker">Studio dashboard / Invoicing</span>
+          <h1>Make it<br /><em>official.</em></h1>
+          <p>Fill in the client details and line items. Your invoice is calculated live and ready to print or save as a PDF.</p>
+          <div className="add-note"><Receipt size={18} /> Private to this browser</div>
+        </div>
+
+        <div className="glass-card invoice-editor">
+          <div className="booking-top"><span>INVOICE DETAILS</span><Receipt size={17} /></div>
+          <div className="input-grid">
+            <label>Invoice number<input value={invoiceNumber} onChange={(event) => setInvoiceNumber(event.target.value)} /></label>
+            <label>Invoice date<input type="date" value={invoiceDate} onChange={(event) => setInvoiceDate(event.target.value)} /></label>
+            <label>Due date<input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} /></label>
+          </div>
+          <div className="invoice-editor-divider">BILL TO</div>
+          <div className="input-grid">
+            <label>Client name<input value={clientName} onChange={(event) => setClientName(event.target.value)} placeholder="Client or company name" /></label>
+            <label>Client email<input type="email" value={clientEmail} onChange={(event) => setClientEmail(event.target.value)} placeholder="hello@client.com" /></label>
+          </div>
+          <label className="full-input">Client address<input value={clientAddress} onChange={(event) => setClientAddress(event.target.value)} placeholder="Street, city, country" /></label>
+
+          <div className="invoice-editor-divider">LINE ITEMS</div>
+          <div className="invoice-items-editor">
+            <div className="invoice-items-head"><span>Description</span><span>Qty</span><span>Rate</span><span>Amount</span><span /></div>
+            {items.map((item, index) => <div className="invoice-item-editor" key={item.id}>
+              <div className="invoice-item-description"><span className="invoice-row-number">{String(index + 1).padStart(2, '0')}</span><input aria-label="Item description" value={item.description} onChange={(event) => updateItem(item.id, 'description', event.target.value)} placeholder="Service or deliverable" /></div>
+              <input aria-label="Quantity" type="number" min="0" step="1" value={item.quantity} onChange={(event) => updateItem(item.id, 'quantity', event.target.value)} />
+              <input aria-label="Rate" type="number" min="0" step="100" value={item.rate || ''} onChange={(event) => updateItem(item.id, 'rate', event.target.value)} placeholder="0" />
+              <strong className="invoice-item-amount">{money(item.quantity * item.rate)}</strong>
+              <button type="button" className="icon-button" aria-label={`Remove item ${index + 1}`} onClick={() => setItems((current) => current.length > 1 ? current.filter((line) => line.id !== item.id) : current)}><Trash2 size={15} /></button>
+            </div>)}
+          </div>
+          <button type="button" className="add-item-button" onClick={() => setItems((current) => [...current, { id: Date.now(), description: '', quantity: 1, rate: 0 }])}><Plus size={15} /> Add line item</button>
+
+          <div className="input-grid invoice-adjustments">
+            <label>Tax <span className="muted-label">(%)<input type="number" min="0" value={tax || ''} onChange={(event) => setTax(Math.max(0, Number(event.target.value) || 0))} placeholder="0" /></span></label>
+            <label>Discount <span className="muted-label">(%)<input type="number" min="0" max="100" value={discount || ''} onChange={(event) => setDiscount(Math.min(100, Math.max(0, Number(event.target.value) || 0)))} placeholder="0" /></span></label>
+          </div>
+          <label className="full-input">Notes <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Payment instructions or a thank-you note" /></label>
+          <div className="invoice-actions"><button type="button" className="button-primary submit-button" onClick={printInvoice}><Printer size={17} /> Print / Save PDF</button><span className="form-note">Uses your browser print dialog.</span></div>
+        </div>
+      </section>
+
+      <section className="container invoice-preview-wrap">
+        <div className="invoice-preview-label"><span className="section-kicker">Live preview</span><span>Amounts in INR</span></div>
+        <article className="invoice-paper">
+          <header className="invoice-paper-header">
+            <div><div className="invoice-paper-brand"><span className="brand-mark">n</span><strong>Nikhil <i>|</i> Editor</strong></div><p>Video editing & motion design</p></div>
+            <div className="invoice-wordmark"><span>INVOICE</span><strong>{invoiceNumber || '—'}</strong></div>
+          </header>
+          <div className="invoice-rule" />
+          <div className="invoice-meta-row"><div><small>FROM</small><strong>Nikhil | Editor</strong><span>New Delhi, India<br />nikhmdia@gmail.com<br />+91 9891698051</span></div><div><small>BILL TO</small><strong>{clientName || 'Client name'}</strong><span>{clientEmail || 'client@email.com'}<br />{clientAddress || 'Client address'}</span></div><div><small>ISSUED</small><strong>{displayDate(invoiceDate)}</strong><small>DUE</small><strong>{displayDate(dueDate)}</strong></div></div>
+          <table className="invoice-table"><thead><tr><th>DESCRIPTION</th><th>QTY</th><th>RATE</th><th>AMOUNT</th></tr></thead><tbody>{items.map((item) => <tr key={item.id}><td>{item.description || 'Service or deliverable'}</td><td>{item.quantity}</td><td>{money(item.rate)}</td><td>{money(item.quantity * item.rate)}</td></tr>)}</tbody></table>
+          <div className="invoice-bottom"><div className="invoice-notes"><small>NOTES</small><p>{notes || '—'}</p><span>Payment via UPI · nimbuuz@slc</span></div><div className="invoice-totals"><div><span>Subtotal</span><strong>{money(subtotal)}</strong></div>{discount > 0 && <div><span>Discount ({discount}%)</span><strong>− {money(discountAmount)}</strong></div>}{tax > 0 && <div><span>Tax ({tax}%)</span><strong>{money(taxAmount)}</strong></div>}<div className="invoice-total"><span>Total due</span><strong>{money(total)}</strong></div></div></div>
+          <footer className="invoice-paper-footer"><span>Thank you for your business.</span><span>nikfolio.tech</span></footer>
+        </article>
+      </section>
+      <Toaster theme="dark" position="bottom-right" />
+    </main>
+  );
+}
+
 function BlogRow({ item }: { item: string[] }) {
   return (
     <a href="#contact" className="blog-row group">
@@ -445,6 +606,11 @@ export default function App() {
   if (window.location.pathname === '/pricing') {
     return <PricingPage onBack={() => { window.location.href = '/'; }} />;
   }
+  if (window.location.pathname === '/invoice') {
+    return sessionStorage.getItem('nimbuuz-invoice-auth') === 'true'
+      ? <InvoicePage onBack={() => { window.location.href = '/'; }} />
+      : <InvoiceLogin onBack={() => { window.location.href = '/'; }} />;
+  }
 
   const allVideos = [...customVideos, ...videos];
   const shortVideos = allVideos.filter((video) => video.category === 'short');
@@ -465,7 +631,7 @@ export default function App() {
           <a href="#about" onClick={() => setMenuOpen(false)}>About</a>
           <a href="#contact" onClick={() => setMenuOpen(false)}>Contact</a>
         </div>
-        <div className="nav-actions"><a href="/add" className="nav-add">+ Add work</a><a href="#book" className="nav-cta">Book a call <ArrowUpRight size={16} /></a></div>
+        <div className="nav-actions"><a href="/invoice" className="nav-add">Invoice</a><a href="/add" className="nav-add">+ Add work</a><a href="#book" className="nav-cta">Book a call <ArrowUpRight size={16} /></a></div>
         <button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle navigation" aria-expanded={menuOpen}>{menuOpen ? <X /> : <Menu />}</button>
       </nav>
 
