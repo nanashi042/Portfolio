@@ -208,19 +208,24 @@ function VideoCard({ video, number, onOpen }: { video: Video; number: number; on
         <div className="video-depth video-depth-one" />
         <div className="video-depth video-depth-two" />
         <div className="video-grid" />
+        <span className="video-mock-kicker">PORTFOLIO</span>
+        <span className="video-mock-year">2026</span>
+        <div className="video-timeline" aria-hidden="true">
+          <span /><span /><span /><span /><i />
+        </div>
         <span className="video-number">{String(number).padStart(2, '0')}</span>
         <span className="video-label">{video.category === 'long' ? 'FILM' : video.category === 'personal' ? 'NOTE' : 'REEL'}</span>
-        <span className="video-art-title">{video.title}</span>
+        <span className="video-mock-title">Video<br />Editor<span>.</span></span>
         <span className="video-play"><Play size={16} fill="currentColor" /></span>
-        <span className="video-platform">
+        {video.category !== 'personal' && <span className="video-platform">
           {video.platform === 'instagram' ? <Instagram size={14} /> : <Youtube size={14} />}
           {video.platform}
-        </span>
+        </span>}
       </div>
       <div className="video-copy">
         <div className="flex items-center justify-between gap-3">
           <span className="eyebrow">{video.category === 'short' ? 'Short form' : video.category === 'long' ? 'Long form' : 'Personal video'}</span>
-          <span className="views">{video.views} views</span>
+          {video.category !== 'personal' && <span className="views">{video.views} views</span>}
         </div>
         <h3>{video.title}</h3>
         <p>{video.creator}</p>
